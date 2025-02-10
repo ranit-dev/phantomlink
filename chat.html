@@ -301,10 +301,13 @@
         <textarea id="message-input" placeholder="Type your message..." rows="1" autocomplete="off"></textarea>
     </div>
 
-    <script src="https://phantomlink-server.factrm03.repl.co/socket.io/socket.io.js"></script>
+    <script src="https://phantomlink.vercel.app/socket.io/socket.io.js"></script>
     <script>
-        
-        const socket = io();
+        const socket = io("https://phantomlink.vercel.app", {
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
+        });
         const chatContainer = document.getElementById('chat-container');
         const messageInput = document.getElementById('message-input');
         const roomId = window.location.pathname.split('/').pop();
