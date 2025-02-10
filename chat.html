@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhantomLink - Chat</title>
+    <style>
+        :root {
+            --terminal-bg: #0c0c0c;
+            --terminal-text: #ffffff;
+            --terminal-dim: #808080;
+            --terminal-border: #333333;
+            --terminal-font: 'JetBrains Mono', 'Courier New', monospace;
+            --terminal-glow: 0 0 2px rgba(255, 255, 255, 0.2);
+            --terminal-hover: rgba(255, 255, 255, 0.1);
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--terminal-font);
+            background: var(--terminal-bg);
+            color: var(--terminal-text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            text-shadow: none;
+        }
+
+        /* Scanline effect */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                transparent 50%, 
+                rgba(0, 0, 0, 0.05) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        #chat-container {
+            flex-grow: 1;
+            border: 1px solid var(--terminal-border);
+            border-radius: 4px;
+            margin-bottom: 10px;
+            padding: 15px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            word-wrap: break-word;
+            max-height: calc(100vh - 120px);
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 2;
+        }
+
+        .message {
+            margin-bottom: 12px;
+            line-height: 1.5;
+            padding: 5px;
+            word-break: break-word;
+            display: flex;
+            align-items: flex-start;
+            opacity: 0;
+            animation: fadeIn 0.2s ease forwards;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message::before {
+            content: ">";
+            color: var(--terminal-dim);
+            margin-right: 10px;
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+
+        .message-content {
+            flex-grow: 1;
+            min-width: 0; /* Helps with text overflow */
+        }
+
+        #input-container {
+            display: flex;
+            gap: 10px;
+            position: sticky;
+            bottom: 0;
+            padding: 10px 0;
+            background: var(--terminal-bg);
+        }
+
+        #message-input {
+            flex-grow: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--terminal-border);
+            border-radius: 4px;
+            padding: 12px;
+            color: var(--terminal-text);
+            font-family: var(--terminal-font);
+            font-size: 16px;
+            max-height: 100px;
+            overflow-y: auto;
+            resize: none;
+            text-shadow: var(--terminal-glow);
+        }
+
+        .timestamp {
+            color: var(--terminal-dim);
+            font-size: 0.8em;
+            margin-right: 8px;
+            white-space: nowrap;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            #chat-container {
+                padding: 10px;
+                max-height: calc(100vh - 70px);
+            }
+
+            #message-input {
+                font-size: 14px;
+                padding: 8px;
+            }
+
+            .message {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .timestamp {
+                display: block;
+                margin-bottom: 2px;
+            }
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--terminal-dim);
+            color: var(--terminal-text);
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: var(--terminal-font);
+            font-size: 0.9em;
+            margin-left: 10px;
+            vertical-align: middle;
+            border-radius: 3px;
+            text-shadow: var(--terminal-glow);
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: var(--terminal-hover);
+            border-color: var(--terminal-text);
+        }
+
+        .system-message {
+            color: var(--terminal-dim);
+            font-style: italic;
+        }
+
+        .link-message {
+            word-break: break-all;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .join-message {
+            color: var(--terminal-text);
+            font-style: italic;
+        }
+
+        .join-message .text {
+            color: var(--terminal-text) !important;
+            text-shadow: 0 0 2px rgba(0, 255, 0, 0.4);
+        }
+        
+        .user-joined {
+            color: var(--terminal-text);
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--terminal-dim);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--terminal-text);
+        }
+
+        /* Input focus effect */
+        #message-input:focus {
+            outline: none;
+            box-shadow: none;
+            border-color: var(--terminal-text);
+        }
+
+        #user-banner {
+            background: var(--terminal-border);
+            padding: 8px 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-family: var(--terminal-font);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #user-banner .user-id {
+            color: var(--terminal-text);
+            font-size: 0.9em;
+        }
+
+        #user-banner .label {
+            color: var(--terminal-dim);
+            margin-right: 8px;
+        }
+
+        #users-count {
+            color: var(--terminal-dim);
+            font-size: 0.9em;
+        }
+
+        .leave-message {
+            color: var(--terminal-dim);
+            font-style: italic;
+        }
+
+        .leave-message .text {
+            color: #ff6b6b !important;
+            font-style: italic;
+        }
+
+        .leave-chat-btn {
+            background: transparent;
+            border: 1px solid var(--terminal-dim);
+            color: var(--terminal-text);
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: var(--terminal-font);
+            font-size: 0.9em;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+
+        .leave-chat-btn:hover {
+            background: rgba(255, 107, 107, 0.1);
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <div id="user-banner">
+        <span>
+            <span class="label">Your ID:</span>
+            <span class="user-id" id="current-user-id"></span>
+        </span>
+        <button class="leave-chat-btn" id="leave-chat">Leave Chat</button>
+        <span id="users-count">Users: 1</span>
+    </div>
+    <div id="chat-container"></div>
+    <div id="input-container">
+        <textarea id="message-input" placeholder="Type your message..." rows="1" autocomplete="off"></textarea>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const chatContainer = document.getElementById('chat-container');
+        const messageInput = document.getElementById('message-input');
+        const roomId = window.location.pathname.split('/').pop();
+        const userId = 'user_' + Math.random().toString(36).substr(2, 9);
+
+        console.log('Attempting to join room:', roomId);
+        
+        if (roomId) {
+            socket.emit('join-room', {
+                roomId: roomId,
+                userId: userId
+            });
+        }
+
+        socket.on('room-joined', (response) => {
+            console.log('Room join response:', response);
+            if (!response.success) {
+                addSystemMessage('Error: Invalid room link');
+                return;
+            }
+            document.getElementById('current-user-id').textContent = userId;
+            addSystemMessage('Room link (share with others):', true);
+            updateUserCount(response.users);
+        });
+
+        socket.on('user-joined', (data) => {
+            if (data.isNewUser && data.userId !== userId) {
+                const message = `${data.userId} joined the chat`;
+                addSystemMessage(message, false, 'join-message');
+                updateUserCount(data.users);
+            }
+        });
+
+        socket.on('user-left', (data) => {
+            console.log('User left event received:', data);
+            if (data.userId) {
+                const message = `${data.userId} left the chat`;
+                addSystemMessage(message, false, 'leave-message');
+                if (data.users) {
+                    updateUserCount(data.users);
+                }
+            }
+        });
+
+        function updateUserCount(count) {
+            document.getElementById('users-count').textContent = `Users: ${count}`;
+        }
+
+        function addSystemMessage(message, includeLink = false, customClass = '') {
+            const timestamp = new Date().toLocaleTimeString();
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${customClass}`;
+            
+            if (includeLink) {
+                const shareLink = `${window.location.origin}/chat/${roomId}`;
+                messageElement.innerHTML = `
+                    <div class="message-content">
+                        <span class="timestamp">[${timestamp}]</span>
+                        <span class="user-id system-message">System:</span>
+                        <span class="link-message">
+                            ${message}
+                            <span class="share-link">${shareLink}</span>
+                            <button class="copy-btn">Copy Link</button>
+                        </span>
+                    </div>
+                `;
+                
+                const copyBtn = messageElement.querySelector('.copy-btn');
+                copyBtn.addEventListener('click', () => {
+                    navigator.clipboard.writeText(shareLink);
+                    addSystemMessage('Link copied to clipboard!');
+                });
+            } else {
+                messageElement.innerHTML = `
+                    <div class="message-content">
+                        <span class="timestamp">[${timestamp}]</span>
+                        <span class="user-id system-message">System:</span>
+                        <span class="text">${message}</span>
+                    </div>
+                `;
+            }
+            
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function addMessage(message, userId) {
+            const timestamp = new Date().toLocaleTimeString();
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message';
+            messageElement.innerHTML = `
+                <div class="message-content">
+                    <span class="timestamp">[${timestamp}]</span>
+                    <span class="user-id">${userId}:</span>
+                    <span class="text">${message}</span>
+                </div>
+            `;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Auto-resize textarea
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+        });
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (messageInput.value.trim()) {
+                    const message = messageInput.value;
+                    socket.emit('user-message', {
+                        message: message,
+                        userId: userId,
+                        roomId: roomId
+                    });
+                    messageInput.value = '';
+                    messageInput.style.height = 'auto';
+                }
+            }
+        });
+
+        socket.on('message', (data) => {
+            addMessage(data.message, data.userId);
+        });
+
+        // System message when user joins
+        addSystemMessage('Connected to PhantomLink chat. Start typing to send messages.');
+
+        // Add this after userId initialization
+        document.getElementById('current-user-id').textContent = userId;
+
+        // Add leave chat handler
+        document.getElementById('leave-chat').addEventListener('click', () => {
+            if (socket.connected) {
+                socket.disconnect();
+            }
+            window.location.href = '/';
+        });
+
+        // Add window unload handler
+        window.addEventListener('beforeunload', () => {
+            if (socket.connected) {
+                socket.disconnect();
+            }
+        });
+    </script>
+</body>
+</html>

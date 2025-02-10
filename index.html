@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhantomLink - Welcome</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --terminal-bg: #1a1a1a;
+            --terminal-text: #ffffff;
+            --terminal-dim: #808080;
+            --terminal-font: 'Courier New', monospace;
+        }
+
+        body {
+            font-family: var(--terminal-font);
+            background: var(--terminal-bg);
+            color: var(--terminal-text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.6;
+        }
+
+        .container {
+            text-align: center;
+            padding: 40px 20px;
+            max-width: 800px;
+        }
+
+        .logo {
+            margin-bottom: 30px;
+            font-size: 3em;
+            letter-spacing: 2px;
+        }
+
+        .logo::before {
+            content: "$ ";
+            color: var(--terminal-dim);
+            font-size: 0.8em;
+        }
+
+        .description {
+            margin-bottom: 40px;
+            color: var(--terminal-dim);
+        }
+
+        .features {
+            margin-bottom: 40px;
+            text-align: left;
+            display: inline-block;
+        }
+
+        .features li {
+            list-style: none;
+            margin: 10px 0;
+            color: var(--terminal-dim);
+        }
+
+        .features li::before {
+            content: "> ";
+            color: var(--terminal-text);
+        }
+
+        .join-btn {
+            background: transparent;
+            padding: 15px 40px;
+            border: 2px solid var(--terminal-text);
+            color: var(--terminal-text);
+            font-family: var(--terminal-font);
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            outline: none;
+        }
+
+        .join-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .join-btn:active {
+            transform: translateY(0);
+        }
+
+        .join-btn.loading {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: wait;
+            pointer-events: none;
+        }
+
+        .join-btn.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top-color: var(--terminal-text);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            right: 15px;
+            top: 50%;
+            margin-top: -10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .join-btn span {
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .join-btn:hover span {
+            transform: scale(1.05);
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 20px;
+            background: var(--terminal-text);
+            margin-left: 5px;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .logo {
+                font-size: 2em;
+            }
+        }
+
+        .buttons-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--terminal-bg);
+            padding: 30px;
+            border: 2px solid var(--terminal-text);
+            border-radius: 4px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: var(--terminal-text);
+            font-size: 1.2em;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            background: transparent;
+            border: 1px solid var(--terminal-dim);
+            color: var(--terminal-text);
+            font-family: var(--terminal-font);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 8px 15px;
+            border: 1px solid var(--terminal-dim);
+            background: transparent;
+            color: var(--terminal-text);
+            cursor: pointer;
+            font-family: var(--terminal-font);
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn:hover {
+            border-color: var(--terminal-text);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-btn.cancel {
+            color: #ff6b6b;
+            border-color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="logo">PhantomLink<span class="cursor"></span></h1>
+        <p class="description">Anonymous Terminal-Based Chat Platform</p>
+        <ul class="features">
+            <li>No registration required</li>
+            <li>Anonymous chatting</li>
+            <li>Terminal-style interface</li>
+            <li>Simple and secure</li>
+        </ul>
+        <div class="buttons-container">
+            <button class="join-btn" id="create-room">
+                <span>CREATE NEW ROOM</span>
+            </button>
+            <button class="join-btn" id="join-room">
+                <span>JOIN EXISTING ROOM</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Add modal for room joining -->
+    <div class="modal" id="join-modal">
+        <div class="modal-content">
+            <h2>Enter Room Link or ID</h2>
+            <input type="text" id="room-id-input" placeholder="Paste room link or ID here">
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" id="cancel-join">Cancel</button>
+                <button class="modal-btn" id="confirm-join">Join Room</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io({
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
+        });
+
+        const createRoomBtn = document.getElementById('create-room');
+
+        createRoomBtn.addEventListener('click', () => {
+            createRoomBtn.classList.add('loading');
+            createRoomBtn.disabled = true;
+            console.log('Creating new room...');
+            socket.emit('create-room');
+        });
+
+        socket.on('room-created', (roomId) => {
+            console.log('Room created:', roomId);
+            if (roomId) {
+                createRoomBtn.innerHTML = '<span>ROOM CREATED - REDIRECTING...</span>';
+                setTimeout(() => {
+                    window.location.href = `/chat/${roomId}`;
+                }, 500);
+            } else {
+                createRoomBtn.classList.remove('loading');
+                createRoomBtn.disabled = false;
+                alert('Error creating room. Please try again.');
+            }
+        });
+
+        socket.on('error', (error) => {
+            console.error('Server error:', error);
+            createRoomBtn.classList.remove('loading');
+            createRoomBtn.disabled = false;
+            alert('Error: ' + error);
+        });
+
+        const joinRoomBtn = document.getElementById('join-room');
+        const modal = document.getElementById('join-modal');
+        const roomInput = document.getElementById('room-id-input');
+        const cancelJoin = document.getElementById('cancel-join');
+        const confirmJoin = document.getElementById('confirm-join');
+
+        joinRoomBtn.addEventListener('click', () => {
+            modal.classList.add('active');
+            roomInput.focus();
+        });
+
+        cancelJoin.addEventListener('click', () => {
+            modal.classList.remove('active');
+            roomInput.value = '';
+        });
+
+        confirmJoin.addEventListener('click', () => {
+            let roomId = roomInput.value.trim();
+            
+            // Extract room ID from full URL if pasted
+            if (roomId.includes('/chat/')) {
+                roomId = roomId.split('/chat/')[1];
+            }
+
+            if (roomId) {
+                window.location.href = `/chat/${roomId}`;
+            } else {
+                alert('Please enter a valid room link or ID');
+            }
+        });
+
+        // Close modal on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                roomInput.value = '';
+            }
+        });
+
+        // Handle Enter key in input
+        roomInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                confirmJoin.click();
+            }
+        });
+    </script>
+</body>
+</html>
